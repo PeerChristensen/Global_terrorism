@@ -5,6 +5,8 @@ library(tidyverse)
 
 df <- read_excel("globalterrorismdb_0718dist.xlsx")
 
+df <- df %>% filter(nkill>0)
+
 remove <- df %>% 
   map_df(~ sum(is.na(.))) %>% 
   select_if(.>0) %>% 
@@ -25,8 +27,11 @@ df <- df %>%
 
 df <- df %>% mutate_if(is.character,factor)
 
-d <- df %>% sample_n(1000)
+df$year <- lubridate::year(df$date)
 
-summary(glm(factor(success) ~ region_txt,data=df,family="binomial"))
+df <- df %>% filter(longitude > -2e+07)
+
+write_csv(df,"global_terror_clean.csv")
+#summary(glm(factor(success) ~ region_txt,data=df,family="binomial"))
 
               
