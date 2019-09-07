@@ -12,9 +12,11 @@ remove <- df %>%
   filter(na_prop>.2) %>%
   pull(key)
 
+remove <- remove[!remove %in% c("summary","nperps")]
+
 df <- df %>% select(-remove,-extended, -country,-region,-provstate,-specificity,-vicinity,-starts_with("crit"),
                     -doubtterr,-ends_with("type1"), -ends_with("type2"),-ends_with("type3"),
-              -natlty1,-gname,-property,-ishostkid,-dbsource,-starts_with("INT"))
+              -natlty1,-property,-ishostkid,-dbsource,-starts_with("INT"))
 
 df <- df %>% 
   mutate(iday = if_else(iday==0,1,iday),
