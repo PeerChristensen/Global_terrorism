@@ -1,11 +1,8 @@
 
 library(readxl)
-library(dtplyr)
 library(tidyverse)
 
 df <- read_excel("globalterrorismdb_0718dist.xlsx")
-
-df <- df %>% filter(nkill>0)
 
 remove <- df %>% 
   map_df(~ sum(is.na(.))) %>% 
