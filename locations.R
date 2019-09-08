@@ -3,6 +3,7 @@
 library(tidyverse)
 library(hrbrthemes)
 library(ggsci)
+library(gganimate)
 
 df <- read_csv("global_terror_clean.csv") 
 
@@ -38,4 +39,23 @@ df %>%
   coord_flip() +
   theme_modern_rc() +
   scale_fill_material("red")
+
+
+
+# regions  by year
+regions <- df %>%
+  group_by(year,region_txt) %>%
+  count() %>%
+  ungroup() %>%
+  group_by(region_txt) %>%
+  mutate(cs = cumsum(n)) %>% tail()
+
+regions %>%
+  drop_na() %>%
+  ggplot(aes(reorder(region_txt,cs),n,fill=n)) +
+  geom_col(colour=NA) +
+  coord_flip() +
+  theme_modern_rc() +
+  scale_fill_material("red") +
+  transition_time(year)
 
