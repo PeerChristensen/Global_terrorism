@@ -11,18 +11,16 @@ df <- read_csv("global_terror_clean.csv")
 df %>%
   group_by(year) %>%
   count() %>%
-  ggplot(aes(year,n, fill = n)) +
-  geom_col(colour=NA) +
-  scale_fill_material("red") +
-  theme_modern_rc()
+  ggplot(aes(year,n)) +
+  theme_modern_rc() +
+  geom_line(colour="darkred", size = 1)
 
 # casualties
 df %>%
   group_by(year) %>%
   summarise(n = sum(nkill,na.rm=T)) %>%
-  ggplot(aes(year,n, fill = n)) +
-  geom_col(colour=NA) +
-  scale_fill_material("red") +
+  ggplot(aes(year,n)) +
+  geom_line(colour="darkred", size = 1) +
   theme_modern_rc()
 
 
