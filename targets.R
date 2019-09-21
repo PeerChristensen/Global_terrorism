@@ -3,6 +3,7 @@
 library(tidyverse)
 library(hrbrthemes)
 library(ggsci)
+library(scales)
 
 df <- read_csv("global_terror_clean.csv") 
 
@@ -40,8 +41,14 @@ df %>%
   arrange(desc(n)) %>%
   ungroup() %>%
   top_n(25) %>%
-  ggplot(aes(reorder(target1,n),n, fill = n)) +
+  mutate(pct = n/sum(n)*100) %>%
+  ggplot(aes(reorder(target1,pct),pct, fill = log(pct))) +
   geom_col(colour=NA) +
   scale_fill_material("red") +
   theme_modern_rc() +
+  theme(panel.grid.major.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none") +
+  scale_y_percent(scale=1) +
   coord_flip()
