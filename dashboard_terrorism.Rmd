@@ -1,16 +1,12 @@
 ---
-title: "5 Decades of Global Terrorosm"
+title: "5 Decades of Global Terrorism"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
     vertical_layout: fill
+    css: styles.css
 ---
 
-<style>
-.colored {
-  background-color: #261D1D;
-}
-</style>
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
@@ -19,34 +15,49 @@ library(hrbrthemes)
 library(ggsci)
 
 df <- read_csv("global_terror_clean.csv") 
+
+theme_terr <- function() { 
+  theme_modern_rc(plot_title_size = 30) %+replace% 
+    theme(
+      plot.title = element_blank(),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      legend.position = "none"
+    )
+}
+
+theme_set(theme_terr())
 ```
 
 Overview 
 =======================================================================
 
-Row 
+Row
 -----------------------------------------------------------------------
 
 ### Number of attacks { .colored }
 
 ```{r}
 n_attacks <- nrow(df)
-valueBox(n_attacks, icon = "fa-shopping-cart")
+n_attacks <- format(n_attacks,big.mark   = ",")
+valueBox(n_attacks, icon = "fa-fire")
 ```
 
 ### Number of casualties { .colored }
 
 ```{r}
 n_kills <- sum(df$nkill,na.rm=T)
-valueBox(n_kills, icon = "fa-shopping-cart")
+n_kills <- format(n_kills,big.mark   = ",")
+valueBox(n_kills, icon = "fa-cross")
 ```
 
-### Succesful attacks { .colored }
+### % Succesful attacks { .colored }
 
 ```{r}
 pct <- round(nrow(df[df$success==1,]) / nrow(df) *100,2)
 gauge(pct, min = 0, max = 100, symbol = '%', gaugeSectors(
-  success = c(0, 1.0), warning = c(1.1, 2), danger = c(2.1, 100)
+  success = c(0, 1.0), warning = c(1.1, 2), danger = c(2.1, 100),
+  colors = "darkred"
 ))
 ```
 
@@ -61,7 +72,6 @@ df %>%
   group_by(year) %>%
   count() %>%
   ggplot(aes(year,n)) +
-  theme_modern_rc() +
   geom_line(colour="darkred", size = 1)
 ```
 
@@ -72,7 +82,76 @@ df %>%
   group_by(year) %>%
   summarise(n = sum(nkill,na.rm=T)) %>%
   ggplot(aes(year,n)) +
-  geom_line(colour="darkred", size = 1) +
-  theme_modern_rc()
+  geom_line(colour="darkred", size = 1) 
 ```
 
+Attack info 
+=======================================================================
+
+Row
+-----
+
+### Most used weapons { .colored }
+
+```{r}
+df %>%
+  mutate(weaptype1_txt = recode(weaptype1_txt,"Vehicle (not to include vehicle-borne explosives, i.e., car or truck bombs)" 
+="Vehicle")) %>%
+  group_by(weaptype1_txt) %>%
+  count() %>%
+  arrange(desc(n)) %>%
+  ungroup() %>%
+  mutate(pct = n/sum(n)*100) %>%
+  ggplot(aes(reorder(weaptype1_txt,pct),pct, fill = pct)) +
+  geom_col(colour=NA) +
+  scale_fill_material("red") +
+  coord_flip()
+```
+
+### Most common attack types { .colored }
+
+```{r}
+df %>%
+  group_by(attacktype1_txt) %>%
+  count() %>%
+  ungroup() %>%
+  mutate(pct = n/sum(n)*100) %>%
+  ggplot(aes(reorder(attacktype1_txt,pct),pct, fill = pct)) +
+  geom_col(colour=NA) +
+  scale_fill_material("red") +
+  coord_flip()
+```
+
+### Most common targets {.colored}
+
+```{r}
+df %>%
+  filter(!is.na(target1)) %>%
+  group_by(target1) %>%
+  count() %>%
+  arrange(desc(n)) %>%
+  ungroup() %>%
+  top_n(20) %>%
+  mutate(pct = n/sum(n)*100) %>%
+  ggplot(aes(reorder(target1,pct),pct, fill = log(pct))) +
+  geom_col(colour=NA) +
+  scale_fill_material("red") +
+  scale_y_percent(scale=1) +
+  coord_flip()
+```
+
+Row
+---
+### Most casualties  {.colored}
+```{r fig.width=15, fig.height=7}
+df %>%
+  mutate(id = paste(year,city,country_txt,"-",attacktype1_txt)) %>%
+  select(date,id,nkill,nwound) %>%
+  distinct(id, .keep_all = T) %>%
+  arrange(desc(nkill)) %>%
+  top_n(25,nkill) %>%
+  ggplot(aes(x = reorder(id,nkill),y=nkill,fill=log(nkill))) +
+  geom_col(colour=NA) +
+  coord_flip() +
+  scale_fill_material("red")
+```
