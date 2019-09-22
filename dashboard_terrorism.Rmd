@@ -1,10 +1,12 @@
 ---
-title: "5 Decades of Global Terrorism"
+title: "Five Decades of Global Terrorism"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
     vertical_layout: fill
     css: styles.css
+    social: [ "twitter"]
+    source_code: embed
 ---
 
 
@@ -22,12 +24,16 @@ theme_terr <- function() {
       plot.title = element_blank(),
       axis.title.x = element_blank(),
       axis.title.y = element_blank(),
-      legend.position = "none"
+      legend.position = "none",
+      axis.text.x = element_text(size = 18),
+      axis.text.y = element_text(size = 18,hjust=1)
     )
 }
 
 theme_set(theme_terr())
 ```
+
+Data source: National Consortium for the Study of Terrorism and Responses to Terrorism (START). (2018). Global Terrorism Database [Data file].<br>Retrieved from https://www.start.umd.edu/gtd
 
 Overview 
 =======================================================================
@@ -35,7 +41,7 @@ Overview
 Row
 -----------------------------------------------------------------------
 
-### Number of attacks { .colored }
+### Number of attacks { .colored_smallbox}
 
 ```{r}
 n_attacks <- nrow(df)
@@ -43,12 +49,12 @@ n_attacks <- format(n_attacks,big.mark   = ",")
 valueBox(n_attacks, icon = "fa-fire")
 ```
 
-### Number of casualties { .colored }
+### Number of casualties { .colored_smallbox }
 
 ```{r}
 n_kills <- sum(df$nkill,na.rm=T)
 n_kills <- format(n_kills,big.mark   = ",")
-valueBox(n_kills, icon = "fa-cross")
+valueBox(n_kills, icon = "ion-man")
 ```
 
 ### % Succesful attacks { .colored }
@@ -66,13 +72,16 @@ Row
 
 ### Number of attacks by year { .colored }
 
-
 ```{r}
 df %>%
   group_by(year) %>%
   count() %>%
   ggplot(aes(year,n)) +
-  geom_line(colour="darkred", size = 1)
+  geom_line(colour="darkred", size = 1) +
+  scale_y_continuous(labels = function(n) {
+    trans = n / 1000
+    paste0(trans, "K")
+  })
 ```
 
 ### Number of kills by year { .colored }
@@ -82,7 +91,11 @@ df %>%
   group_by(year) %>%
   summarise(n = sum(nkill,na.rm=T)) %>%
   ggplot(aes(year,n)) +
-  geom_line(colour="darkred", size = 1) 
+  geom_line(colour="darkred", size = 1) +
+  scale_y_continuous(labels = function(n) {
+    trans = n / 1000
+    paste0(trans, "K")
+  })
 ```
 
 Attack info 
@@ -91,7 +104,7 @@ Attack info
 Row
 -----
 
-### Most used weapons { .colored }
+### Most used weapons { .colored}
 
 ```{r}
 df %>%
@@ -101,24 +114,32 @@ df %>%
   count() %>%
   arrange(desc(n)) %>%
   ungroup() %>%
+  top_n(10) %>%
   mutate(pct = n/sum(n)*100) %>%
   ggplot(aes(reorder(weaptype1_txt,pct),pct, fill = pct)) +
   geom_col(colour=NA) +
   scale_fill_material("red") +
+  scale_y_percent(scale=1) +
   coord_flip()
 ```
 
-### Most common attack types { .colored }
+### Most common attack types { .colored}
 
 ```{r}
 df %>%
   group_by(attacktype1_txt) %>%
   count() %>%
   ungroup() %>%
-  mutate(pct = n/sum(n)*100) %>%
+  top_n(10) %>%
+  mutate(attacktype1_txt = recode(attacktype1_txt, 
+        "Facility/Infrastructure Attack" = "Facility/Infrastr.", 
+        "Hostage Taking (Barricade Incident)" = "Hostage Taking",
+        "Hostage Taking (Kidnapping)" = "Kidnapping"),
+         pct = n/sum(n)*100) %>%
   ggplot(aes(reorder(attacktype1_txt,pct),pct, fill = pct)) +
   geom_col(colour=NA) +
   scale_fill_material("red") +
+  scale_y_percent(scale=1) +
   coord_flip()
 ```
 
@@ -131,7 +152,7 @@ df %>%
   count() %>%
   arrange(desc(n)) %>%
   ungroup() %>%
-  top_n(20) %>%
+  top_n(10) %>%
   mutate(pct = n/sum(n)*100) %>%
   ggplot(aes(reorder(target1,pct),pct, fill = log(pct))) +
   geom_col(colour=NA) +
@@ -142,16 +163,67 @@ df %>%
 
 Row
 ---
-### Most casualties  {.colored}
+### Attacks in history with the most casualties  {.colored}
 ```{r fig.width=15, fig.height=7}
 df %>%
   mutate(id = paste(year,city,country_txt,"-",attacktype1_txt)) %>%
   select(date,id,nkill,nwound) %>%
   distinct(id, .keep_all = T) %>%
   arrange(desc(nkill)) %>%
-  top_n(25,nkill) %>%
+  top_n(15,nkill) %>%
   ggplot(aes(x = reorder(id,nkill),y=nkill,fill=log(nkill))) +
   geom_col(colour=NA) +
   coord_flip() +
   scale_fill_material("red")
+```
+
+Interactive map 
+=======================================================================
+
+Shiny slider, n attack and n kills by country
+
+Animated map 
+=======================================================================
+
+Row
+---
+
+### map { .colored data-height=800}
+```{r fig.height=15}
+
+library(maps)
+library(ggthemes)
+library(gganimate)
+
+df <- read_csv("global_terror_clean.csv")
+
+df <- df %>% filter(nkill>0)
+
+world <- ggplot() +
+  borders("world", colour = "gray85", fill = "gray80") +
+  theme_map() +
+  theme(plot.background = element_rect(fill="#2B2828"),
+        plot.title = element_text(size= 18,colour="snow"),
+        legend.position = "none") +
+  coord_map(xlim=c(-180,180)) +
+  scale_y_continuous(limits=c(-60,90)) +
+  theme(panel.background = element_blank())
+
+map2 <- world +
+  #geom_point(aes(x = longitude, y = latitude, size = nkill),
+  #           data=df,colour = 'darkred', alpha = .2) +
+  geom_point(aes(longitude, latitude,size=nkill), color = "darkred",
+             alpha=.5, data=df) + 
+  scale_size_continuous(range = c(2, 12)) +
+  # transition_states(year,
+  #                   transition_length = 2,
+  #                   state_length = 1) +
+  # ggtitle('Year: {closest_state}')
+  transition_time(year) +
+  labs(title = "Year: {round(frame_time,0)}")
+
+animate(map2,fps=3,nframes=n_distinct(df$year),width = 900, height = 600,
+        bg = 'transparent')
+#anim <- animate(p)
+#magick::image_write(anim, path="myanimation.gif")
 ```
