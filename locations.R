@@ -43,7 +43,6 @@ df %>%
   scale_fill_material("red")
 
 
-
 # regions  by year
 regions <- df %>%
   group_by(year,region_txt) %>%
