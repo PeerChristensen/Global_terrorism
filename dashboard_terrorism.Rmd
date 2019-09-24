@@ -43,7 +43,7 @@ Row
 
 ### Number of attacks { .colored_smallbox}
 
-```{r}
+```{r }
 n_attacks <- nrow(df)
 n_attacks <- format(n_attacks,big.mark   = ",")
 valueBox(n_attacks, icon = "fa-fire")
@@ -51,7 +51,7 @@ valueBox(n_attacks, icon = "fa-fire")
 
 ### Number of casualties { .colored_smallbox }
 
-```{r}
+```{r }
 n_kills <- sum(df$nkill,na.rm=T)
 n_kills <- format(n_kills,big.mark   = ",")
 valueBox(n_kills, icon = "ion-man")
@@ -59,7 +59,7 @@ valueBox(n_kills, icon = "ion-man")
 
 ### % Succesful attacks { .colored }
 
-```{r}
+```{r }
 pct <- round(nrow(df[df$success==1,]) / nrow(df) *100,2)
 gauge(pct, min = 0, max = 100, symbol = '%', gaugeSectors(
   success = c(0, 1.0), warning = c(1.1, 2), danger = c(2.1, 100),
@@ -72,7 +72,7 @@ Row
 
 ### Number of attacks by year { .colored }
 
-```{r}
+```{r }
 df %>%
   group_by(year) %>%
   count() %>%
@@ -86,7 +86,7 @@ df %>%
 
 ### Number of kills by year { .colored }
 
-```{r}
+```{r }
 df %>%
   group_by(year) %>%
   summarise(n = sum(nkill,na.rm=T)) %>%
@@ -106,7 +106,7 @@ Row
 
 ### Most used weapons { .colored}
 
-```{r}
+```{r }
 df %>%
   mutate(weaptype1_txt = recode(weaptype1_txt,"Vehicle (not to include vehicle-borne explosives, i.e., car or truck bombs)" 
 ="Vehicle")) %>%
@@ -125,7 +125,7 @@ df %>%
 
 ### Most common attack types { .colored}
 
-```{r}
+```{r }
 df %>%
   group_by(attacktype1_txt) %>%
   count() %>%
@@ -145,7 +145,7 @@ df %>%
 
 ### Most common targets {.colored}
 
-```{r}
+```{r }
 df %>%
   filter(!is.na(target1)) %>%
   group_by(target1) %>%
@@ -185,11 +185,11 @@ Shiny slider, n attack and n kills by country
 Animated map 
 =======================================================================
 
-Row {.tabset .tabset-fade}
+Row {.tabset .tabset-fade }
 ---
 
 ### Global attacks through time { .colored}
-```{r fig.height=15, fig.width=18}
+```{r,fig.height=15, fig.width=18}
 
 library(maps)
 library(ggthemes)
@@ -246,13 +246,13 @@ regions <- df %>%
          Value_rel = cs/cs[Rank==1],
          Value_lbl = paste0(" ",round(cs/1e9)))  %>%
   ungroup() 
-
+library(ggsci)
 p<-regions %>%
   ggplot(aes(order,Value_rel,fill=region_txt,group=cs)) +
   #geom_col(colour=NA) +
   geom_tile(aes(y=cs/2,height=cs),width=0.9,show.legend = F)+
   coord_flip(clip="off") +
-  scale_fill_viridis_d() +
+  scale_fill_d3(palette = "category20") +
   transition_states(year, transition_length = 4, state_length = 1) +
   theme(legend.position = "none",
         axis.text.y = element_blank(),
@@ -262,6 +262,6 @@ p<-regions %>%
   geom_text(aes(y = 0, label = paste(region_txt, " ")), vjust = 0.2, hjust = 1,colour="snow") 
 
 #animate(p,fps=2.5,nframes = n_distinct(regions$year)*2)
-animate(p, 100, fps = 25, duration = 15.6, width = 1000, height = 600)
+animate(p, 100, fps = 25, duration = 20, width = 1000, height = 600)
 
 ```
