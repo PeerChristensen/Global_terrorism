@@ -8,6 +8,7 @@ d <- df %>%
          lat=latitude,
          lon=longitude,
          z = nkill) %>%
+  sample_n(10000) %>%
   select(location,attacktype1_txt,lat,lon,z)
 
 x <- c("Location", "Attack type", "Casualties")
