@@ -26,6 +26,8 @@ library(highcharter)
 
 df <- read_csv("global_terror_clean.csv") 
 
+load("mapdata.Rdata")
+
 theme_terr <- function() { 
   theme_modern_rc(plot_title_size = 30) %+replace% 
     theme(
@@ -41,10 +43,11 @@ theme_terr <- function() {
 theme_set(theme_terr())
 ```
 
-Data source: National Consortium for the Study of Terrorism and Responses to Terrorism (START). (2018). Global Terrorism Database [Data file].<br>Retrieved from https://www.start.umd.edu/gtd
 
 Overview 
 =======================================================================
+
+Data source: National Consortium for the Study of Terrorism and Responses to Terrorism (START). (2018). Global Terrorism Database.
 
 Row
 -----------------------------------------------------------------------
@@ -105,6 +108,7 @@ df %>%
     paste0(trans, "K")
   })
 ```
+
 
 Attack info 
 =======================================================================
@@ -205,9 +209,7 @@ sliderInput("year_select", label = "Year",
 Column
 --- 
 ### Global attacks through time { .colored}
-```{r global fig.height=15, fig.width=18}
-
-load("mapdata.Rdata")
+```{r fig.height=15, fig.width=18}
 
 renderHighchart({
   
@@ -236,82 +238,4 @@ mapdata %>%
   hc_tooltip(useHTML = TRUE, headerFormat = "", pointFormat = tltip) 
 
 })
-```
-
-Animated map 
-=======================================================================
-
-Row {.tabset .tabset-fade }
----
-
-### Global attacks through time { .colored}
-```{r global fig.height=15, fig.width=18}
-
-df <- df %>% filter(nkill>0)
-
-world <- ggplot() +
-  borders("world", colour = "gray85", fill = "gray80") +
-  theme_map() +
-  theme(plot.background = element_rect(fill="#2B2828"),
-        plot.title = element_text(size= 18,colour="snow"),
-        legend.position = "none") +
-  coord_map(xlim=c(-180,180)) +
-  scale_y_continuous(limits=c(-60,90)) +
-  theme(panel.background = element_blank())
-
-map2 <- world +
-  #geom_point(aes(x = longitude, y = latitude, size = nkill),
-  #           data=df,colour = 'darkred', alpha = .2) +
-  geom_point(aes(longitude, latitude,size=nkill), color = "darkred",
-             alpha=.5, data=df) + 
-  scale_size_continuous(range = c(2, 12)) +
-  # transition_states(year,
-  #                   transition_length = 2,
-  #                   state_length = 1) +
-  # ggtitle('Year: {closest_state}')
-  transition_time(year) +
-  labs(title = "Year: {round(frame_time,0)}")
-
-animate(map2,fps=3,nframes=n_distinct(df$year),width = 900, height = 600,
-        bg = 'transparent')
-
-```
-
-### Attacks by region { .colored}
-
-```{r fig.width = 15, fig.height=12}
-
-regions <- df %>%
-  group_by(year,region_txt) %>%
-  count() %>%
-  ungroup() %>%
-  complete(year,region_txt,fill=list(n=0)) %>%
-  group_by(region_txt) %>%
-  mutate(cs = cumsum(n)) %>% 
-  ungroup() %>%
-  group_by(year) %>%
-  arrange(year,desc(cs)) %>%
-  mutate(order = rev(row_number())) %>%
-  mutate(Rank = rank(-cs),
-         Value_rel = cs/cs[Rank==1],
-         Value_lbl = paste0(" ",round(cs/1e9)))  %>%
-  ungroup() 
-
-p <- regions %>%
-  ggplot(aes(order,Value_rel,fill=region_txt,group=cs)) +
-  #geom_col(colour=NA) +
-  geom_tile(aes(y=cs/2,height=cs),width=0.9,show.legend = F)+
-  coord_flip(clip="off") +
-  scale_fill_d3(palette = "category20") +
-  transition_states(year, transition_length = 4, state_length = 1) +
-  theme(legend.position = "none",
-        axis.text.y = element_blank(),
-        axis.title.y = element_blank(),
-        plot.margin = margin(1,1,1,6, "cm")) +
-    labs(title = "Year: {closest_state}") +
-  geom_text(aes(y = 0, label = paste(region_txt, " ")), vjust = 0.2, hjust = 1,colour="snow") 
-
-#animate(p,fps=2.5,nframes = n_distinct(regions$year)*2)
-animate(p, 100, fps = 25, duration = 20, width = 1000, height = 600)
-
 ```
