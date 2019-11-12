@@ -59,4 +59,19 @@ animate(map2,fps=3,nframes=n_distinct(df$year))
 
 anim_save("myGif.gif")
 
+# rayshader
+p <- world +
+  # geom_point(aes(x = longitude, y = latitude, size = log(nkill)),
+  #            data = df,
+  #            colour = 'darkred', alpha = .03) +
+  scale_size_continuous(range = c(2, 10),
+                       breaks = c(250, 500, 750, 1000)) +
+  geom_point(aes(longitude, latitude, color = log(density)),
+            alpha=.5, data=df) 
+#  geom_pointdensity(aes(x=longitude,y=latitude,size=nkill),data=df,adjust = 5) +
+ # scale_color_scico("lajolla",direction = -1,begin=.5,end=1)
 
+plot_gg(p, width = 3.5, multicore = TRUE, windowsize = c(800, 800), 
+        zoom = 0.85, phi = 35, theta = 30, sunangle = 225, soliddepth = -100)
+Sys.sleep(0.2)
+render_snapshot(clear = TRUE)
