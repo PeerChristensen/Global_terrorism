@@ -65,7 +65,7 @@ n_kills <- format(n_kills,big.mark   = ",")
 valueBox(n_kills, icon = "ion-man")
 ```
 
-### % Succesful attacks { .colored }
+### % Fatal attacks { .colored }
 
 ```{r }
 pct <- round(nrow(df[df$success==1,]) / nrow(df) *100,2)
